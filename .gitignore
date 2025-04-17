@@ -1,8 +1,0 @@
-*.txt
-*.pdf
-*.pyc
-.env
-
-index.ipynb
-
-!requirements.txt
