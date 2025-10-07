@@ -22,7 +22,13 @@ for root, dirs, files in os.walk(folder_path):
 
 all_pages = []  # To store pages from all files
 
-for txt_file_path in txt_files:
+for txt_file_path in txt_files[:50]:
+    # print(f"Processing {txt_file_path}...")
+    loader = TextLoader(file_path=txt_file_path, encoding="utf-8")
+
+    # Load the documents for this file and append to `all_pages`
+    for doc in loader.lazy_load():
+        all_pages.append(doc)
     # print(f"Processing {txt_file_path}...")
     loader = TextLoader(file_path=txt_file_path, encoding="utf-8")
 
@@ -34,9 +40,8 @@ for txt_file_path in txt_files:
 print(f"Total pages loaded: {len(all_pages)}")
 
 # Splitting document
-
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=2000, chunk_overlap=500, separators=["\n"]
+    chunk_size=1000, chunk_overlap=300, separators=["\n"]
 )
 
 splits = text_splitter.split_documents(all_pages)
@@ -53,17 +58,18 @@ vector_store = PGVector(
 print("PGVector Store is loaded.")
 
 # push embedding to collection
-for i in range(0, len(splits), 500):
-    chunk = splits[i : i + 500]
+print("Adding documents to vector store...")
+for i in range(0, len(splits), 20):
+    chunk = splits[i : i + 20]
     try:
         # Add the chunk to the vector store
         vector_store.add_documents(documents=chunk)
-        print(f"Chunk {i // 500} added successfully")
+        print(f"Chunk {i // 20 + 1}/{(len(splits) + 20) // 20} added successfully")
     except Exception as e:
-        print(f"Error adding chunk {i // 500}: {e}")
+        print(f"Error adding chunk {i // 20}: {e}")
         continue
-    
-    
+
+
 # vec_retriever = vector_store.as_retriever(
 #     search_type="similarity", search_kwargs={"k": 5}
 # )
