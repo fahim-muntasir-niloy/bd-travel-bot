@@ -22,7 +22,7 @@ for root, dirs, files in os.walk(folder_path):
 
 all_pages = []  # To store pages from all files
 
-for txt_file_path in txt_files[:50]:
+for txt_file_path in txt_files:
     # print(f"Processing {txt_file_path}...")
     loader = TextLoader(file_path=txt_file_path, encoding="utf-8")
 
@@ -41,7 +41,7 @@ print(f"Total pages loaded: {len(all_pages)}")
 
 # Splitting document
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=300, separators=["\n"]
+    chunk_size=2000, chunk_overlap=300, separators=["\n"]
 )
 
 splits = text_splitter.split_documents(all_pages)
@@ -59,14 +59,14 @@ print("PGVector Store is loaded.")
 
 # push embedding to collection
 print("Adding documents to vector store...")
-for i in range(0, len(splits), 20):
-    chunk = splits[i : i + 20]
+for i in range(0, len(splits), 200):
+    chunk = splits[i : i + 200]
     try:
         # Add the chunk to the vector store
         vector_store.add_documents(documents=chunk)
-        print(f"Chunk {i // 20 + 1}/{(len(splits) + 20) // 20} added successfully")
+        print(f"Chunk {i // 200 + 1}/{(len(splits) + 200) // 200} added successfully")
     except Exception as e:
-        print(f"Error adding chunk {i // 20}: {e}")
+        print(f"Error adding chunk {i // 200}: {e}")
         continue
 
 

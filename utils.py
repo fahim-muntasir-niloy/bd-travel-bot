@@ -8,8 +8,7 @@ from langchain.chat_models import init_chat_model
 from langchain_groq import ChatGroq
 from typing import List
 from langchain_core.embeddings import Embeddings
-from google import genai
-from google.genai import types
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,36 +21,41 @@ llm = init_chat_model(
 )
 
 
-class CustomGoogleGenAIEmbeddings(Embeddings):
-    def __init__(
-        self, model: str = "gemini-embedding-001", output_dimensionality: int = 768
-    ):
-        self.client = genai.Client()
+class NvidiaOpenAIEmbeddings_BGE_M3(Embeddings):
+    def __init__(self, api_key: str, base_url: str, model: str = "baai/bge-m3"):
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+
+
         self.model = model
-        self.output_dimensionality = output_dimensionality
 
-    def embed_query(self, text: str) -> list[float]:
-        result = self.client.models.embed_content(
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        response = self.client.embeddings.create(
+            input=texts,
             model=self.model,
-            contents=text,
-            config=types.EmbedContentConfig(
-                output_dimensionality=self.output_dimensionality
-            ),
-        )
-        [embedding_obj] = result.embeddings
-        return embedding_obj.values
+            encoding_format="float",
+            extra_body={"truncate": "NONE"},
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        result = self.client.models.embed_content(
+
+        )
+        return [data.embedding for data in response.data]
+
+
+    def embed_query(self, text: str) -> List[float]:
+        response = self.client.embeddings.create(
+            input=[text],
             model=self.model,
-            contents=texts,
-            config=types.EmbedContentConfig(
-                output_dimensionality=self.output_dimensionality
-            ),
+            encoding_format="float",
+            extra_body={"truncate": "NONE"},
+
+
         )
-        return [embedding.values for embedding in result.embeddings]
+        return response.data[0].embedding
 
 
-embedding_engine = CustomGoogleGenAIEmbeddings(
-    model="gemini-embedding-001", output_dimensionality=768
+
+embedding_engine = NvidiaOpenAIEmbeddings_BGE_M3(
+    api_key=os.getenv("NVIDIA_API_KEY"),
+    base_url="https://integrate.api.nvidia.com/v1",
+    model="baai/bge-m3",
 )
